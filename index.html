@@ -1,59 +1,54 @@
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="utf-8">
-<title>Butterfly Knife VR</title>
-<script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-</head>
-
-<body>
-<a-scene xr-mode-ui="enabled: true">
-
-<a-entity camera look-controls position="0 1.6 0"></a-entity>
-
-<a-entity id="hand"
-  laser-controls="hand: right"
-  knife-control>
-</a-entity>
-
-<a-plane rotation="-90 0 0" width="8" height="8" color="#222"></a-plane>
-
-<a-box id="handle"
-  position="0 1.4 -1"
-  width="0.05"
-  height="0.15"
-  depth="0.03"
-  color="#444">
-</a-box>
-
-<a-box id="blade"
-  position="0 1.55 -1"
-  width="0.01"
-  height="0.18"
-  depth="0.02"
-  color="#ccc">
-</a-box>
-
 <script>
 AFRAME.registerComponent('knife-control', {
   init() {
     this.blade = document.querySelector('#blade')
-    this.open = false
-    window.addEventListener('triggerdown', () => this.toggle())
+
+    this.angle = 0        // blade hinge angle
+    this.velocity = 0     // swing speed
+    this.maxAngle = Math.PI
+    this.minAngle = 0
+
+    this.lastRot = 0
+    this.grabbed = true
+
+    window.addEventListener('triggerdown', () => {
+      // snap open / closed
+      this.angle = this.angle > Math.PI / 2 ? 0 : Math.PI
+      this.velocity = 0
+    })
   },
 
-  tick() {
-    const x = this.el.object3D.rotation.x
-    this.blade.object3D.rotation.x = x * 2
-  },
+  tick(time, delta) {
+    const dt = delta / 1000
+    if (!dt) return
 
-  toggle() {
-    this.open = !this.open
-    this.blade.object3D.rotation.x = this.open ? Math.PI : 0
+    // wrist angular velocity
+    const rotX = this.el.object3D.rotation.x
+    const deltaRot = rotX - this.lastRot
+    this.lastRot = rotX
+
+    // add momentum
+    this.velocity += deltaRot * 8
+
+    // gravity / damping
+    this.velocity *= 0.96
+    this.velocity -= Math.sin(this.angle) * 2 * dt
+
+    // integrate
+    this.angle += this.velocity
+
+    // clamp hinge
+    if (this.angle > this.maxAngle) {
+      this.angle = this.maxAngle
+      this.velocity *= -0.3
+    }
+    if (this.angle < this.minAngle) {
+      this.angle = this.minAngle
+      this.velocity *= -0.3
+    }
+
+    // apply rotation
+    this.blade.object3D.rotation.x = this.angle
   }
 })
 </script>
-
-</a-scene>
-</body>
-</html>
