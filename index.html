@@ -1,7 +1,7 @@
 <!-- Knife Root -->
-<a-entity id="knife" position="0 1.45 -1" dual-handle-knife>
+<a-entity id="knife" position="0 1.45 -1">
 
-  <!-- Blade (fixed) -->
+  <!-- Blade (fixed between handles) -->
   <a-box
     id="blade"
     width="0.01"
@@ -11,88 +11,71 @@
     position="0 0.09 0">
   </a-box>
 
-  <!-- Handle A (bite handle) -->
+  <!-- Handle A -->
   <a-box
-    class="handle"
     id="handleA"
     width="0.05"
     height="0.15"
     depth="0.03"
     color="#444"
-    position="0 -0.075 0">
+    position="0 -0.075 0"
+    rotation="0 0 0">
+    <!-- Animation for open/close -->
+    <a-animation
+      attribute="rotation"
+      dur="300"
+      fill="forwards"
+      begin="toggleA"
+      to="180 0 0">
+    </a-animation>
   </a-box>
 
-  <!-- Handle B (safe handle) -->
+  <!-- Handle B -->
   <a-box
-    class="handle"
     id="handleB"
     width="0.05"
     height="0.15"
     depth="0.03"
     color="#666"
-    position="0 -0.075 0">
+    position="0 -0.075 0"
+    rotation="0 0 0">
+    <!-- Animation for open/close -->
+    <a-animation
+      attribute="rotation"
+      dur="300"
+      fill="forwards"
+      begin="toggleB"
+      to="-180 0 0">
+    </a-animation>
   </a-box>
 
 </a-entity>
 
 <script>
-AFRAME.registerComponent('dual-handle-knife', {
-  init() {
-    // Use el.querySelector so we find nested entities
-    this.handleA = this.el.querySelector('#handleA')
-    this.handleB = this.el.querySelector('#handleB')
+AFRAME.registerComponent('knife-anim-control', {
+  init: function () {
+    const handleA = this.el.querySelector('#handleA');
+    const handleB = this.el.querySelector('#handleB');
 
-    this.aAngle = 0
-    this.bAngle = 0
-    this.aVel = 0
-    this.bVel = 0
+    this.open = false;
 
-    this.wristPower = 14
-    this.gravity = 5
-    this.damping = 0.985
-    this.limit = Math.PI
-
-    this.lastRot = this.el.object3D.rotation.x
-
-    // Trigger snap open/close
     window.addEventListener('triggerdown', () => {
-      const open = this.aAngle < Math.PI / 2
-      this.aVel = open ? 6 : -6
-      this.bVel = open ? -6 : 6
-    })
-  },
+      this.open = !this.open;
+      // trigger animations
+      handleA.emit('toggleA');
+      handleB.emit('toggleB');
 
-  tick(time, delta) {
-    const dt = delta / 1000
-    if (!dt) return
-
-    const rot = this.el.object3D.rotation.x
-    const dRot = rot - this.lastRot
-    this.lastRot = rot
-
-    // Apply momentum from wrist flick
-    this.aVel += dRot * this.wristPower
-    this.bVel -= dRot * this.wristPower
-
-    // Gravity torque
-    this.aVel -= Math.sin(this.aAngle) * this.gravity * dt
-    this.bVel -= Math.sin(this.bAngle) * this.gravity * dt
-
-    // Damping
-    this.aVel *= this.damping
-    this.bVel *= this.damping
-
-    // Integrate
-    this.aAngle += this.aVel
-    this.bAngle += this.bVel
-
-    // Clamp
-    this.aAngle = Math.max(0, Math.min(this.limit, this.aAngle))
-    this.bAngle = Math.max(0, Math.min(this.limit, this.bAngle))
-
-    // Apply rotation
-    this.handleA.object3D.rotation.x = this.aAngle
-    this.handleB.object3D.rotation.x = -this.bAngle
+      // flip animation back for next toggle
+      if (this.open) {
+        handleA.querySelector('a-animation').setAttribute('to', '180 0 0');
+        handleB.querySelector('a-animation').setAttribute('to', '-180 0 0');
+      } else {
+        handleA.querySelector('a-animation').setAttribute('to', '0 0 0');
+        handleB.querySelector('a-animation').setAttribute('to', '0 0 0');
+      }
+    });
   }
-})
+});
 </script>
+
+<a-entity knife-anim-control></a-entity>
