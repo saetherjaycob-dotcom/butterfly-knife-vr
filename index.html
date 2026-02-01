@@ -1,16 +1,52 @@
+<!-- Knife Root -->
+<a-entity id="knife" position="0 1.45 -1" dual-handle-knife>
+
+  <!-- Blade (fixed) -->
+  <a-box
+    id="blade"
+    width="0.01"
+    height="0.18"
+    depth="0.02"
+    color="#ccc"
+    position="0 0.09 0">
+  </a-box>
+
+  <!-- Handle A (bite handle) -->
+  <a-box
+    class="handle"
+    id="handleA"
+    width="0.05"
+    height="0.15"
+    depth="0.03"
+    color="#444"
+    position="0 -0.075 0">
+  </a-box>
+
+  <!-- Handle B (safe handle) -->
+  <a-box
+    class="handle"
+    id="handleB"
+    width="0.05"
+    height="0.15"
+    depth="0.03"
+    color="#666"
+    position="0 -0.075 0">
+  </a-box>
+
+</a-entity>
+
 <script>
 AFRAME.registerComponent('dual-handle-knife', {
   init() {
-    this.handleA = document.querySelector('#handleA')
-    this.handleB = document.querySelector('#handleB')
+    // Use el.querySelector so we find nested entities
+    this.handleA = this.el.querySelector('#handleA')
+    this.handleB = this.el.querySelector('#handleB')
 
-    // Handle angles
     this.aAngle = 0
     this.bAngle = 0
     this.aVel = 0
     this.bVel = 0
 
-    // Physics constants (tuned)
     this.wristPower = 14
     this.gravity = 5
     this.damping = 0.985
@@ -18,7 +54,7 @@ AFRAME.registerComponent('dual-handle-knife', {
 
     this.lastRot = this.el.object3D.rotation.x
 
-    // Trigger snaps open / closed
+    // Trigger snap open/close
     window.addEventListener('triggerdown', () => {
       const open = this.aAngle < Math.PI / 2
       this.aVel = open ? 6 : -6
@@ -30,12 +66,11 @@ AFRAME.registerComponent('dual-handle-knife', {
     const dt = delta / 1000
     if (!dt) return
 
-    // Wrist angular acceleration
     const rot = this.el.object3D.rotation.x
     const dRot = rot - this.lastRot
     this.lastRot = rot
 
-    // Momentum from wrist flick
+    // Apply momentum from wrist flick
     this.aVel += dRot * this.wristPower
     this.bVel -= dRot * this.wristPower
 
@@ -51,7 +86,7 @@ AFRAME.registerComponent('dual-handle-knife', {
     this.aAngle += this.aVel
     this.bAngle += this.bVel
 
-    // Clamp limits
+    // Clamp
     this.aAngle = Math.max(0, Math.min(this.limit, this.aAngle))
     this.bAngle = Math.max(0, Math.min(this.limit, this.bAngle))
 
