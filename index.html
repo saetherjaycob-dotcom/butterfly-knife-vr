@@ -1,81 +1,59 @@
-<!-- Knife Root -->
-<a-entity id="knife" position="0 1.45 -1">
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Butterfly Knife VR</title>
+    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+  </head>
+  <body>
+    <a-scene vr-mode-ui="enabled: true" embedded background="color: #111">
 
-  <!-- Blade (fixed between handles) -->
-  <a-box
-    id="blade"
-    width="0.01"
-    height="0.18"
-    depth="0.02"
-    color="#ccc"
-    position="0 0.09 0">
-  </a-box>
+      <!-- Camera + controllers -->
+      <a-entity camera look-controls position="0 1.6 0"></a-entity>
+      <a-entity id="rightHand" laser-controls="hand: right"></a-entity>
 
-  <!-- Handle A -->
-  <a-box
-    id="handleA"
-    width="0.05"
-    height="0.15"
-    depth="0.03"
-    color="#444"
-    position="0 -0.075 0"
-    rotation="0 0 0">
-    <!-- Animation for open/close -->
-    <a-animation
-      attribute="rotation"
-      dur="300"
-      fill="forwards"
-      begin="toggleA"
-      to="180 0 0">
-    </a-animation>
-  </a-box>
+      <!-- Floor -->
+      <a-plane rotation="-90 0 0" width="8" height="8" color="#222"></a-plane>
 
-  <!-- Handle B -->
-  <a-box
-    id="handleB"
-    width="0.05"
-    height="0.15"
-    depth="0.03"
-    color="#666"
-    position="0 -0.075 0"
-    rotation="0 0 0">
-    <!-- Animation for open/close -->
-    <a-animation
-      attribute="rotation"
-      dur="300"
-      fill="forwards"
-      begin="toggleB"
-      to="-180 0 0">
-    </a-animation>
-  </a-box>
+      <!-- Knife Root -->
+      <a-entity id="knife" position="0 1.5 -1" knife-anim-control>
 
-</a-entity>
+        <!-- Blade (fixed) -->
+        <a-box id="blade" width="0.01" height="0.18" depth="0.02" color="#ccc" position="0 0.09 0"></a-box>
 
-<script>
-AFRAME.registerComponent('knife-anim-control', {
-  init: function () {
-    const handleA = this.el.querySelector('#handleA');
-    const handleB = this.el.querySelector('#handleB');
+        <!-- Handle A -->
+        <a-box id="handleA" width="0.05" height="0.15" depth="0.03" color="#444" position="0 -0.075 0"></a-box>
 
-    this.open = false;
+        <!-- Handle B -->
+        <a-box id="handleB" width="0.05" height="0.15" depth="0.03" color="#666" position="0 -0.075 0"></a-box>
 
-    window.addEventListener('triggerdown', () => {
-      this.open = !this.open;
-      // trigger animations
-      handleA.emit('toggleA');
-      handleB.emit('toggleB');
+      </a-entity>
 
-      // flip animation back for next toggle
-      if (this.open) {
-        handleA.querySelector('a-animation').setAttribute('to', '180 0 0');
-        handleB.querySelector('a-animation').setAttribute('to', '-180 0 0');
-      } else {
-        handleA.querySelector('a-animation').setAttribute('to', '0 0 0');
-        handleB.querySelector('a-animation').setAttribute('to', '0 0 0');
-      }
-    });
-  }
-});
-</script>
+      <script>
+        AFRAME.registerComponent('knife-anim-control', {
+          init: function() {
+            this.handleA = document.getElementById('handleA');
+            this.handleB = document.getElementById('handleB');
+            this.open = false;
 
-<a-entity knife-anim-control></a-entity>
+            window.addEventListener('triggerdown', () => {
+              this.open = !this.open;
+
+              if (this.open) {
+                this.handleA.setAttribute('animation__flip', {property: 'rotation', to: '180 0 0', dur: 300, easing: 'easeOutQuad', startEvents: 'go'});
+                this.handleB.setAttribute('animation__flip', {property: 'rotation', to: '-180 0 0', dur: 300, easing: 'easeOutQuad', startEvents: 'go'});
+              } else {
+                this.handleA.setAttribute('animation__flip', {property: 'rotation', to: '0 0 0', dur: 300, easing: 'easeOutQuad', startEvents: 'go'});
+                this.handleB.setAttribute('animation__flip', {property: 'rotation', to: '0 0 0', dur: 300, easing: 'easeOutQuad', startEvents: 'go'});
+              }
+
+              this.handleA.emit('go');
+              this.handleB.emit('go');
+            });
+          }
+        });
+      </script>
+
+    </a-scene>
+  </body>
+</html>
