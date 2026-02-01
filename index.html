@@ -1,26 +1,28 @@
 <script>
-AFRAME.registerComponent('knife-control', {
+AFRAME.registerComponent('dual-handle-knife', {
   init() {
-    this.blade = document.querySelector('#blade')
+    this.handleA = document.querySelector('#handleA')
+    this.handleB = document.querySelector('#handleB')
 
-    // Blade state
-    this.angle = Math.PI * 0.1     // radians
-    this.velocity = 0              // angular velocity
+    // Handle angles
+    this.aAngle = 0
+    this.bAngle = 0
+    this.aVel = 0
+    this.bVel = 0
 
     // Physics constants (tuned)
-    this.gravity = 6.0
+    this.wristPower = 14
+    this.gravity = 5
     this.damping = 0.985
-    this.wristPower = 18.0
-    this.snapStrength = 0.15
-
-    this.minAngle = 0
-    this.maxAngle = Math.PI
+    this.limit = Math.PI
 
     this.lastRot = this.el.object3D.rotation.x
 
-    // Trigger = force snap
+    // Trigger snaps open / closed
     window.addEventListener('triggerdown', () => {
-      this.velocity = this.angle > Math.PI / 2 ? -6 : 6
+      const open = this.aAngle < Math.PI / 2
+      this.aVel = open ? 6 : -6
+      this.bVel = open ? -6 : 6
     })
   },
 
@@ -30,41 +32,32 @@ AFRAME.registerComponent('knife-control', {
 
     // Wrist angular acceleration
     const rot = this.el.object3D.rotation.x
-    const deltaRot = rot - this.lastRot
+    const dRot = rot - this.lastRot
     this.lastRot = rot
 
-    // Add momentum from wrist flicks
-    this.velocity += deltaRot * this.wristPower
+    // Momentum from wrist flick
+    this.aVel += dRot * this.wristPower
+    this.bVel -= dRot * this.wristPower
 
-    // Gravity torque (wants blade to fall)
-    this.velocity -= Math.sin(this.angle) * this.gravity * dt
+    // Gravity torque
+    this.aVel -= Math.sin(this.aAngle) * this.gravity * dt
+    this.bVel -= Math.sin(this.bAngle) * this.gravity * dt
 
-    // Damping (air + hinge friction)
-    this.velocity *= this.damping
+    // Damping
+    this.aVel *= this.damping
+    this.bVel *= this.damping
 
     // Integrate
-    this.angle += this.velocity
+    this.aAngle += this.aVel
+    this.bAngle += this.bVel
 
-    // Hard hinge limits with bounce
-    if (this.angle < this.minAngle) {
-      this.angle = this.minAngle
-      this.velocity *= -0.25
-    }
-    if (this.angle > this.maxAngle) {
-      this.angle = this.maxAngle
-      this.velocity *= -0.25
-    }
-
-    // Snap assist near open/closed
-    if (Math.abs(this.angle - this.maxAngle) < 0.08) {
-      this.velocity += this.snapStrength
-    }
-    if (Math.abs(this.angle - this.minAngle) < 0.08) {
-      this.velocity -= this.snapStrength
-    }
+    // Clamp limits
+    this.aAngle = Math.max(0, Math.min(this.limit, this.aAngle))
+    this.bAngle = Math.max(0, Math.min(this.limit, this.bAngle))
 
     // Apply rotation
-    this.blade.object3D.rotation.x = this.angle
+    this.handleA.object3D.rotation.x = this.aAngle
+    this.handleB.object3D.rotation.x = -this.bAngle
   }
 })
 </script>
